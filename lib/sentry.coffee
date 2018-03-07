@@ -15,8 +15,8 @@ parseDSN = (dsn) ->
   catch err
     {}
 
-_handle_http_load_errors = (context, err) ->
-  context.emit "warning", err
+_handle_http_load_errors = (context, err,data) ->
+  context.emit "warning", err,data
 
 # Takes an amount of time (in milliseconds) and a function and produces a function that calls the
 # given function with a timeout. If the given function doesn't call its callback within the
@@ -92,13 +92,12 @@ module.exports = class Sentry extends events.EventEmitter
       @emit("done")
       if err? or !res or res.statusCode > 299
         if res?.statusCode in [429, 413]
-          _handle_http_load_errors @, err
+          _handle_http_load_errors @, err,data
           return cb(err or new Error("status code: #{res.statusCode}"))
-        console.error 'Error posting event to Sentry:', err, body
-        @emit("error", err)
+        @emit("error", err,data)
         return cb(err or new Error("status code: #{res?.statusCode}"))
       else
-        @emit("logged")
+        @emit("logged",data)
         return cb()
 
   wrapper: (logger, timeout = 5000) =>
